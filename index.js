@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _util = require('util');
 
-var _softDelete = require('./soft-delete');
+var _softDelete = require('./src/index');
 
 var _softDelete2 = _interopRequireDefault(_softDelete);
 
