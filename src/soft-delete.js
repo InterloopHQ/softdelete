@@ -1,9 +1,13 @@
+
+/**
+ * Import
+ */
 import _debug from './debug';
 const debug = _debug();
 
+
 export default (Model, { deletedAt = 'deletedAt', _isDeleted = '_isDeleted', scrub = false }) => {
   debug('SoftDelete mixin for Model %s', Model.modelName);
-
   debug('options', { deletedAt, _isDeleted, scrub });
 
   const properties = Model.definition.properties;
@@ -21,30 +25,26 @@ export default (Model, { deletedAt = 'deletedAt', _isDeleted = '_isDeleted', scr
   Model.defineProperty(deletedAt, {type: Date, required: false});
   Model.defineProperty(_isDeleted, {required: true, default: false});
 
-  Model.destroyAll = function softDestroyAll(where, cb) {
+  // take over destroy all
+  // ------------------------
+  Model.destroyAll = async function softDestroyAll(where) {
     return Model.updateAll(where, { ...scrubbed, [deletedAt]: new Date(), [_isDeleted]: true })
-      .then(result => (typeof cb === 'function') ? cb(null, result) : result)
-      .catch(error => (typeof cb === 'function') ? cb(error) : Promise.reject(error));
   };
 
+  // map to this
   Model.remove = Model.destroyAll;
   Model.deleteAll = Model.destroyAll;
 
-  Model.destroyById = function softDestroyById(id, cb) {
+  Model.destroyById = async function softDestroyById(id) {
     return Model.updateAll({ id: id }, { ...scrubbed, [deletedAt]: new Date(), [_isDeleted]: true })
-      .then(result => (typeof cb === 'function') ? cb(null, result) : result)
-      .catch(error => (typeof cb === 'function') ? cb(error) : Promise.reject(error));
   };
 
+  // map to above
   Model.removeById = Model.destroyById;
   Model.deleteById = Model.destroyById;
 
-  Model.prototype.destroy = function softDestroy(options, cb) {
-    const callback = (cb === undefined && typeof options === 'function') ? options : cb;
-
+  Model.prototype.destroy = function softDestroy(options) {
     return this.updateAttributes({ ...scrubbed, [deletedAt]: new Date(), [_isDeleted]: true })
-      .then(result => (typeof cb === 'function') ? callback(null, result) : result)
-      .catch(error => (typeof cb === 'function') ? callback(error) : Promise.reject(error));
   };
 
   Model.prototype.remove = Model.prototype.destroy;
